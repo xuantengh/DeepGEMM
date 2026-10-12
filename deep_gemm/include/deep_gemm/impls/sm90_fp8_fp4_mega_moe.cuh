@@ -852,6 +852,8 @@ sm90_fp8_fp4_mega_moe_impl(void* y,
             kUseWideLoadDecode>(
             decode_thread_idx, kNumFP4DecodeWorkerThreads,
             smem_b_packed[cur_stage_idx], smem_b[cur_stage_idx], smem_sfb[cur_stage_idx]);
+        // Publish generic shared stores before asynchronous WGMMA reads.
+        asm volatile("fence.proxy.async.shared::cta;" ::: "memory");
         arrive_or_sync_fp4_decode_done(cur_stage_idx);
     };
 
@@ -1977,10 +1979,10 @@ sm90_fp8_fp4_mega_moe_impl(void* y,
 
                 float weight_r0 = valid_r0 ? *l1_topk_weights_buffer
                     .get_data_buffer(m_idx + row_offset_r0)
-                    .get_base_ptr<float>() : 0.0f;
+                    .template get_base_ptr<float>() : 0.0f;
                 float weight_r1 = valid_r1 ? *l1_topk_weights_buffer
                     .get_data_buffer(m_idx + row_offset_r1)
-                    .get_base_ptr<float>() : 0.0f;
+                    .template get_base_ptr<float>() : 0.0f;
                 #pragma unroll
                 for (uint32_t sf_group = 0;
                      sf_group < kNumOutputSFPerWG; ++ sf_group) {

@@ -16,11 +16,11 @@
 
 set -euo pipefail
 
-PYTHON_EXE=$(which python3 || which python)
+PYTHON_EXE=${PYTHON_EXE:-$(which python3 || which python)}
 ROOT_DIR=$(realpath "$(dirname "$0")")
-BUILD_DIR="${ROOT_DIR}/build"
+BUILD_DIR="${DG_BUILD_DIR:-${ROOT_DIR}/build}"
 PKG_DIR="${BUILD_DIR}/deep_gemm"
-DIST_DIR="${ROOT_DIR}/dist"
+DIST_DIR="${DG_DIST_DIR:-${ROOT_DIR}/dist}"
 
 cd "$ROOT_DIR"
 
@@ -147,12 +147,18 @@ shutil.rmtree(build_subdir, ignore_errors=True)
 print(f"Built {target}")
 PY
 
-echo "--- Installing build frontend ---"
-"$PYTHON_EXE" -m pip install --quiet --upgrade build
+BUILD_ARGS=()
+if [[ "${DG_BUILD_FROM_PIP:-0}" == "1" ]]; then
+    # PEP 517 has already installed the declared build dependencies.
+    BUILD_ARGS+=(--no-isolation)
+else
+    echo "--- Installing build frontend ---"
+    "$PYTHON_EXE" -m pip install --quiet --upgrade build
+fi
 
 echo "--- Building wheel ---"
 mkdir -p "$DIST_DIR"
-"$PYTHON_EXE" -m build --wheel "$BUILD_DIR" --outdir "$DIST_DIR"
+"$PYTHON_EXE" -m build --wheel "${BUILD_ARGS[@]}" "$BUILD_DIR" --outdir "$DIST_DIR"
 
 echo "--- Done ---"
 ls -lh "$DIST_DIR"/sgl_deep_gemm-*.whl 2>/dev/null || ls -lh "$DIST_DIR"/sgl-deep-gemm-*.whl 2>/dev/null || ls -lh "$DIST_DIR"/sgl_deep_gemm*.whl

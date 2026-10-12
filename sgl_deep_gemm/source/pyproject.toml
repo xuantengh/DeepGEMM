@@ -1,0 +1,12 @@
+# VCS installation adapter; the wheel metadata remains in ../pyproject.toml.
+[build-system]
+requires = [
+    "setuptools>=77.0.0",
+    "wheel",
+    "build",
+    "ninja",
+    "torch==2.14.1",
+    "apache-tvm-ffi==0.1.11",
+]
+build-backend = "build_backend"
+backend-path = ["."]
